@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { WebView } from 'react-native-webview';
-import { readAsStringAsync } from 'expo-file-system';
-import { useAssets } from 'expo-asset';
 import {
   MapMarker,
   WebviewLeafletMessage,
@@ -13,7 +11,9 @@ import {
   OWN_POSTION_MARKER_ID,
 } from './types';
 import { LatLng } from 'react-leaflet';
-import { NativeSyntheticEvent, StyleSheet } from 'react-native';
+import { NativeSyntheticEvent, Platform, StyleSheet } from 'react-native';
+import { readAsStringAsync } from 'expo-file-system';
+import { useAssets } from 'expo-asset';
 import {
   WebViewError,
   WebViewMessageEvent,
@@ -39,14 +39,14 @@ const LEAFLET_HTML_SOURCE = () => {
 const DEFAULT_MAP_LAYERS = [
   {
     attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      '',
     baseLayerIsChecked: true,
     baseLayerName: 'OpenStreetMap.Mapnik',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   },
 ];
 
-const DEFAULT_ZOOM = 15;
+const DEFAULT_ZOOM = 25;
 
 export type LeafletViewProps = {
   renderLoading?: () => React.ReactElement;
@@ -62,6 +62,7 @@ export type LeafletViewProps = {
   zoom?: number;
   doDebug?: boolean;
   androidHardwareAccelerationDisabled?: boolean;
+  onMapMoveEnd?: (newCenterPosition: LatLng) => void;
 };
 
 const LeafletView: React.FC<LeafletViewProps> = ({
@@ -78,6 +79,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
   zoom,
   doDebug,
   androidHardwareAccelerationDisabled,
+  onMapMoveEnd,
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [initialized, setInitialized] = useState(false);
@@ -153,9 +155,11 @@ const LeafletView: React.FC<LeafletViewProps> = ({
         sendInitialMessage();
       }
       if (message.event === WebViewLeafletEvents.ON_MOVE_END) {
+        const newCenterPosition = message.payload?.mapCenterPosition;
         logMessage(
           `moved to: ${JSON.stringify(message.payload?.mapCenterPosition)}`
         );
+        onMapMoveEnd && onMapMoveEnd(newCenterPosition);
       }
 
       onMessageReceived && onMessageReceived(message);
@@ -192,10 +196,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
     if (!initialized || !ownPositionMarker) {
       return;
     }
-    sendMessage({
-      ...ownPositionMarker,
-      id: OWN_POSTION_MARKER_ID,
-    });
+    sendMessage({ ownPositionMarker });
   }, [initialized, ownPositionMarker, sendMessage]);
 
   //Handle mapCenterPosition update
@@ -227,7 +228,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
       onError={onError}
       originWhitelist={['*']}
       renderLoading={renderLoading}
-      source={{ html: LEAFLET_HTML_SOURCE() }}
+      source={{html:LEAFLET_HTML_SOURCE()}}
       allowFileAccess={true}
       allowUniversalAccessFromFileURLs={true}
       allowFileAccessFromFileURLs={true}
