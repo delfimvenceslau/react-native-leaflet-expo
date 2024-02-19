@@ -11,7 +11,7 @@ import {
   OWN_POSTION_MARKER_ID,
 } from './types';
 import { LatLng } from 'react-leaflet';
-import { NativeSyntheticEvent, Platform, StyleSheet } from 'react-native';
+import { NativeSyntheticEvent, StyleSheet } from 'react-native';
 import { readAsStringAsync } from 'expo-file-system';
 import { useAssets } from 'expo-asset';
 import {
@@ -38,8 +38,7 @@ const LEAFLET_HTML_SOURCE = () => {
 
 const DEFAULT_MAP_LAYERS = [
   {
-    attribution:
-      '',
+    attribution: '',
     baseLayerIsChecked: true,
     baseLayerName: 'OpenStreetMap.Mapnik',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -62,7 +61,7 @@ export type LeafletViewProps = {
   zoom?: number;
   doDebug?: boolean;
   androidHardwareAccelerationDisabled?: boolean;
-  onMapMoveEnd?: (newCenterPosition: LatLng) => void;
+  onMapMoveEnd?: (newCenterPosition: LatLng | undefined) => void; // Updated type here
 };
 
 const LeafletView: React.FC<LeafletViewProps> = ({
@@ -159,7 +158,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
         logMessage(
           `moved to: ${JSON.stringify(message.payload?.mapCenterPosition)}`
         );
-        onMapMoveEnd && onMapMoveEnd(newCenterPosition);
+        onMapMoveEnd && onMapMoveEnd(newCenterPosition as LatLng | undefined); // Updated type here
       }
 
       onMessageReceived && onMessageReceived(message);
@@ -167,7 +166,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
     [logMessage, onMessageReceived, sendInitialMessage]
   );
 
-  //Handle mapLayers update
+  // Handle mapLayers update
   useEffect(() => {
     if (!initialized) {
       return;
@@ -175,7 +174,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
     sendMessage({ mapLayers });
   }, [initialized, mapLayers, sendMessage]);
 
-  //Handle mapMarkers update
+  // Handle mapMarkers update
   useEffect(() => {
     if (!initialized) {
       return;
@@ -183,7 +182,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
     sendMessage({ mapMarkers });
   }, [initialized, mapMarkers, sendMessage]);
 
-  //Handle mapShapes update
+  // Handle mapShapes update
   useEffect(() => {
     if (!initialized) {
       return;
@@ -191,7 +190,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
     sendMessage({ mapShapes });
   }, [initialized, mapShapes, sendMessage]);
 
-  //Handle ownPositionMarker update
+  // Handle ownPositionMarker update
   useEffect(() => {
     if (!initialized || !ownPositionMarker) {
       return;
@@ -199,7 +198,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
     sendMessage({ ownPositionMarker });
   }, [initialized, ownPositionMarker, sendMessage]);
 
-  //Handle mapCenterPosition update
+  // Handle mapCenterPosition update
   useEffect(() => {
     if (!initialized) {
       return;
@@ -207,7 +206,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
     sendMessage({ mapCenterPosition });
   }, [initialized, mapCenterPosition, sendMessage]);
 
-  //Handle zoom update
+  // Handle zoom update
   useEffect(() => {
     if (!initialized) {
       return;
@@ -228,7 +227,7 @@ const LeafletView: React.FC<LeafletViewProps> = ({
       onError={onError}
       originWhitelist={['*']}
       renderLoading={renderLoading}
-      source={{html:LEAFLET_HTML_SOURCE()}}
+      source={{ html: LEAFLET_HTML_SOURCE() }}
       allowFileAccess={true}
       allowUniversalAccessFromFileURLs={true}
       allowFileAccessFromFileURLs={true}
